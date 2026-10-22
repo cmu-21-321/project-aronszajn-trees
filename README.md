@@ -1,4 +1,4 @@
-# ProjectTemplate
+# AronszajnTrees
 
 A template for Lean 4 projects that depend on [Mathlib](https://github.com/leanprover-community/mathlib4).
 
