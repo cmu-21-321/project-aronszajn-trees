@@ -25,10 +25,11 @@ immediately.
 -- The PartialOrder assumption tells Lean that
 -- we have a relation ≤ on these nodes.
 
+@[mk_iff]
 structure IsTreeOrder (α : Type*) [PartialOrder α] : Prop where
   -- There should be no infinite descending chains.
   wellFounded : WellFounded (fun s t : α => s < t)
-  -- Any two strict predecessors of the same node must be comparable.
+  -- Any two strict predecessors must be comparable.
   predecessorsComparable :
     ∀ t s u : α,
       s < t →
@@ -73,7 +74,7 @@ noncomputable def nodeHeight {α : Type*} [PartialOrder α]
     (h : IsTreeOrder α) (t : α) : Ordinal := by
   -- Our tree definition contains a proof that <
   -- is well-founded. We make this available to Lean.
-  letI : WellFounded (fun s u : α => s < u) :=
+  let : WellFounded (fun s u : α => s < u) :=
     h.wellFounded
   -- Now Mathlib can assign an ordinal rank to t.
   exact WellFounded.rank (fun s u : α => s < u) t

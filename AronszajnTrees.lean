@@ -1,2 +1,3 @@
 import AronszajnTrees.Basic
 import AronszajnTrees.Checkpoint1
+import AronszajnTrees.Checkpoint2
