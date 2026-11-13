@@ -90,7 +90,7 @@ theorem nodeHeight_lt_of_lt {α : Type*} [PartialOrder α]
     (hst : s < t) :
     nodeHeight h s < nodeHeight h t := by
   -- Again, we're using the well-foundedness from our tree.
-  letI : WellFounded (fun x y : α => x < y) :=
+  let : WellFounded (fun x y : α => x < y) :=
     h.wellFounded
   -- Mathlib has the rank inequality we need!
   exact WellFounded.rank_lt_of_rel hst

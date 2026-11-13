@@ -1,3 +1,5 @@
 import AronszajnTrees.Basic
 import AronszajnTrees.Checkpoint1
 import AronszajnTrees.Checkpoint2
+import AronszajnTrees.Checkpoint34
+import AronszajnTrees.ResearchNotes
