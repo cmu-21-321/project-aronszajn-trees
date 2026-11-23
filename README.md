@@ -93,7 +93,7 @@ integration runs `lake build` on every push (`.github/workflows/lean_action_ci.y
 
 ## Other deliverables
 
-- Written report: [`report/`](report/) (LaTeX source and PDF)
+- Written report: [`Report/`](Report/) (LaTeX source and PDF)
 - [`COLLABORATION.md`](COLLABORATION.md)
 - [`AI.md`](AI.md)
 
