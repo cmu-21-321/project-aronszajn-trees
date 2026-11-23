@@ -35,11 +35,11 @@ The project builds with no errors and contains no `sorry`.
 | End-extension is antisymmetric, giving a `PartialOrder` | `endExtends_antisymm` | `ConstructionOrder` |
 | Rational sequences under end-extension form a tree | `rationalNodes_form_tree` | `ConstructionOrder` |
 | An initial segment is determined by its length | `initialSegments_eq_of_length_eq` | `OrdinalHeights` |
-| **No chain is cofinal in ω₁** | `ambient_no_cofinal_chain` | `NoCofinalBranch` |
+| No chain is cofinal in ω₁ | `ambient_no_cofinal_chain` | `NoCofinalBranch` |
 | Every selected family has no cofinal chain | `selected_family_no_cofinal_chain` | `NoCofinalBranch` |
-| **Successor step with room below `q`** | `successor_extension_with_room` | `LevelConstruction` |
+| Successor step with room below `q` | `successor_extension_with_room` | `LevelConstruction` |
 | The extension invariant gives nonempty levels | `nonempty_levels_of_extension_invariant` | `LevelConstruction` |
-| **Conditional Aronszajn criterion** | `aronszajn_of_extension_invariant` | `FinalCriterion` |
+| Conditional Aronszajn criterion | `aronszajn_of_extension_invariant` | `FinalCriterion` |
 | Antichain colorings give countable chains | `chain_countable_of_antichain_coloring` | `SpecialTrees` |
 | An uncountable special family is not Suslin-like | `uncountable_special_not_suslin` | `SpecialTrees` |
 
