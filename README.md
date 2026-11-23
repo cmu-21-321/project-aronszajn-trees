@@ -5,7 +5,7 @@ This was an individual project.
 
 An *Aronszajn tree* is a tree of height ω₁ with countable levels and no uncountable branch. Its
 existence shows that the tree property fails at ω₁. This project formalizes the classical
-rational-sequence construction (Jech, *Set Theory*, §9): nodes are strictly increasing,
+rational-sequence construction (Jech, *Set Theory*, Theorem 9.16): nodes are strictly increasing,
 ordinal-indexed sequences of rationals, ordered by end-extension.
 
 ## Status
