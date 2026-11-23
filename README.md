@@ -63,7 +63,8 @@ graph TD
 
 A good reading order is `Checkpoint1`, `Checkpoint34`, `ConstructionOrder`, `NoCofinalBranch`,
 `LevelConstruction`, `FinalCriterion`. The `Checkpoint*` files are named after the course
-checkpoints in which they were written; the later files are named by topic.
+checkpoints in which they were written (`Checkpoint34` combines checkpoints 3 and 4); the
+later files are named by topic.
 
 ## Some design notes
 
@@ -94,7 +95,7 @@ integration runs `lake build` on every push (`.github/workflows/lean_action_ci.y
 
 - Written report: [`report/`](report/) (LaTeX source and PDF)
 - [`COLLABORATION.md`](COLLABORATION.md)
-- [`AI_USE.md`](AI_USE.md)
+- [`AI.md`](AI.md)
 
 ## Reference
 
