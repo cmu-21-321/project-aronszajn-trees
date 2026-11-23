@@ -38,7 +38,7 @@ theorem chain_countable_of_antichain_coloring
     by_contra hne
     rcases hchain x hx y hy with hxy | hyx
     · exact (hc x y (hsub hx) (hsub hy) hne hxy) heq
-    · exact (hc y x (hsub hy) (hsub hx) hne.symm hyx) heq.symm
+    · exact (hc y x (hsub hy) (hsub hx) (Ne.symm hne) hyx) heq.symm
   have himage : (color '' b).Countable := Set.to_countable _
   exact Set.countable_of_injective_of_countable_image hinj himage
 

@@ -50,7 +50,7 @@ noncomputable def appendRational (x : RationalNode) (p : ℚ)
     have hle : x.length ≤ i.val := le_of_not_gt hi
     have hgt : x.length < j.val := lt_of_le_of_lt hle hij'
     have hjle : j.val ≤ x.length := Order.le_of_lt_succ j.property
-    exact (not_lt_of_ge hjle) hgt
+    exact absurd hgt (not_lt_of_ge hjle)
 
 /-!
 The original sequence is an initial segment of the appended one.
@@ -161,7 +161,7 @@ theorem nonempty_levels_of_extension_invariant
   · subst β
     exact ⟨x, hx⟩
   · have hpos : (0 : Ordinal) < β := by
-      exact lt_of_le_of_ne (zero_le β) (Ne.symm hzero)
+      exact lt_of_le_of_ne zero_le (Ne.symm hzero)
     obtain ⟨y, hy, _, _⟩ := hext 0 β hpos hβ x hx q hroom
     exact ⟨y, hy⟩
 

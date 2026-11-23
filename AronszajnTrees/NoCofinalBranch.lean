@@ -80,7 +80,7 @@ theorem countable_below_of_strictly_cofinal_chain
       calc
         f i = (pick i).values ⟨i.val, (hpick i).2⟩ := rfl
         _ < (pick i).values ⟨j.val, hj⟩ := hlt
-        _ = (pick j).values ⟨j.val, (hpick j).2⟩ := (hyx.2 _).symm
+        _ = (pick j).values ⟨j.val, (hpick j).2⟩ := (hyx.2 ⟨j.val, (hpick j).2⟩).symm
         _ = f j := rfl
   -- A strictly increasing function into the countable type Q
   -- is injective. Thus its domain must be countable.
@@ -96,14 +96,14 @@ strictly larger than aleph_0.
 private theorem not_countable_below_omega_one :
     ¬ Countable {β : Ordinal // β < Ordinal.omega 1} := by
   intro hcount
-  letI : Countable {β : Ordinal // β < Ordinal.omega 1} := hcount
-  have hle :
-      Cardinal.mk {β : Ordinal // β < Ordinal.omega 1} ≤ Cardinal.aleph0 :=
-    Cardinal.mk_le_aleph0
-  have hbad : (Cardinal.aleph 1 : Cardinal.{1}) ≤ Cardinal.aleph0 := by
-    simpa only [Ordinal.cardinalMk_Iio, Ordinal.card_omega,
-      Cardinal.lift_aleph, Ordinal.lift_one] using hle
-  exact (not_le.mpr Cardinal.aleph0_lt_aleph_one) hbad
+  -- `Set.Iio o` is definitionally `{β // β < o}`, so countability transfers.
+  have h1 : Cardinal.mk (Set.Iio (Ordinal.omega 1)) ≤ Cardinal.aleph0 :=
+    @Cardinal.mk_le_aleph0 _ hcount
+  -- `#(Iio o) = lift o.card`, and `(ω_ 1).card = ℵ_ 1`.
+  have h2 : Cardinal.aleph 1 ≤ Cardinal.aleph0 := by
+    rw [Cardinal.mk_Iio_ordinal, Ordinal.card_omega] at h1
+    exact Cardinal.lift_le_aleph0.mp h1
+  exact (not_le.mpr Cardinal.aleph0_lt_aleph_one) h2
 
 /-!
 ## 3. No chain is cofinal in omega_1
@@ -124,7 +124,7 @@ theorem ambient_no_cofinal_chain :
     have hsucc : Order.succ β < Ordinal.omega 1 :=
       (Cardinal.isSuccLimit_omega 1).succ_lt hβ
     obtain ⟨x, hxb, hxlen⟩ := hcofinal (Order.succ β) hsucc
-    exact ⟨x, hxb, lt_of_lt_of_le (lt_succ β) hxlen⟩
+    exact ⟨x, hxb, lt_of_lt_of_le (Order.lt_succ β) hxlen⟩
   exact not_countable_below_omega_one
     (countable_below_of_strictly_cofinal_chain
       (Ordinal.omega 1) b hchain hstrict)
