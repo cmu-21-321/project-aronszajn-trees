@@ -2,9 +2,8 @@
 
 I used two AI tools on this project: ChatGPT (OpenAI) and Claude (Anthropic).
 
-Most of the work is mine. I chose the topic and the approach, and Checkpoint1.lean, Checkpoint2.lean, Checkpoint34.lean (checkpoints 1 to 4) and ResearchNotes.lean are my own work. In the remaining Lean files, ChatGPT drafted skeletons of the proofs, and for the harder proofs it gave hints after I had isolated the difficult step as a black box. Four proofs are mostly AI-written, namely
-`countable_below_of_strictly_cofinal_chain`, `ambient_no_cofinal_chain`,
-`not_countable_below_omega_one` and `family_countable_of_coloring_and_countable_antichains`. Claude was used only for build fixes and for editing text. Section 5 lists every declaration where AI-written code remains.
+Most of the work is mine. I chose the topic and the approach, and Checkpoint1.lean, Checkpoint2.lean, Checkpoint34.lean (checkpoints 1 to 4) and ResearchNotes.lean are my own work. In the remaining Lean files, ChatGPT drafted proof skeletons, and for the harder proofs it gave hints after I isolated the difficult step as a black box. Four proofs are mostly AI-written, namely: `countable_below_of_strictly_cofinal_chain`, `ambient_no_cofinal_chain`,
+`not_countable_below_omega_one` and `family_countable_of_coloring_and_countable_antichains`. Claude was used only for build fixes and text editing. Section 5 lists every declaration where AI-written code remains.
 
 ## 1. Tools and models
 
@@ -34,15 +33,15 @@ Most of the work is mine. I chose the topic and the approach, and Checkpoint1.le
 
 ## 3. ChatGPT
 
-**Project development and mathematical background.** I used ChatGPT to weigh and discuss my own ideas for formalizing Aronszajn trees in Lean 4, in particular the construction with strictly increasing rational-valued sequences indexed by countable ordinals. It helped me compare representations of trees, understand the role of ordinal heights and well-founded orders, and
-investigate how Aronszajn, special, and Suslin trees relate. It also helped me identify the countable limit-ordinal step as the central difficulty and suggested ways to organize the remaining proof obligations. The choice of topic and approach was mine.
+**Project development and mathematical background.** I used ChatGPT to weigh and discuss my ideas for formalizing Aronszajn trees in Lean 4, particularly the construction with strictly increasing rational-valued sequences indexed by countable ordinals. It helped me compare representations of trees, understand the role of ordinal heights and well-founded orders, and
+investigate how Aronszajn, special, and Suslin trees relate. It also helped me identify the countable limit-ordinal step as the central difficulty and suggested ways to organize the remaining proof obligations. I chose the topic and approach.
  
-**Definitions and formalization design.** I wrote all of the definitions and theorem statements myself, including the core definitions in my checkpoint files and the later ones such as `appendRational`, `initialSegmentsFamily`, and the statement of `aronszajn_of_extension_invariant`. ChatGPT did not write any of them. It discussed design alternatives with me and helped me locate Mathlib declarations (for example `WellFounded.rank`, `StrictMono`, `IsChain`, and countability lemmas) alongside my own reading and web search. I checked all of these myself afterwards. I also asked it whether any of my definitions could be replaced by existing Mathlib abstractions, in case I had missed redundant parts of my own work.
+**Definitions and formalization design.** I wrote all of the definitions and theorem statements myself, including the core definitions in my checkpoint files and the later ones such as `appendRational`, `initialSegmentsFamily`, and the statement of `aronszajn_of_extension_invariant`. ChatGPT did not write any of them. It discussed design alternatives with me and helped me locate Mathlib declarations (for example, `WellFounded.rank`, `StrictMono`, `IsChain`, and countability lemmas) alongside my own reading and web search. I checked all of these myself afterward. I also asked it whether any of my definitions could be replaced by existing Mathlib abstractions, in case I had missed redundant parts of my own work.
  
-**Proof development and debugging.** In every Lean file other than my checkpoint files and `ResearchNotes.lean`, that is `OrdinalHeights.lean`, `ConstructionOrder.lean`, `NoCofinalBranch.lean`, `LevelConstruction.lean`, `SpecialTrees.lean` and `FinalCriterion.lean`, ChatGPT drafted the skeleton of each proof, and I filled in most of the skeletons myself. Four of the proofs are mostly AI-written, and section 5 names them. I tried to write each of the other proofs on my own first. When I ran into problems, I consulted ChatGPT, and I then kept experimenting myself until `lake build` succeeded. For the harder proofs, I first isolated the difficult step as a black box, and ChatGPT then gave me hints toward filling it in. ChatGPT also
+**Proof development and debugging.** In every Lean file other than my checkpoint files and `ResearchNotes.lean`, that is `OrdinalHeights.lean`, `ConstructionOrder.lean`, `NoCofinalBranch.lean`, `LevelConstruction.lean`, `SpecialTrees.lean` and `FinalCriterion.lean`, ChatGPT drafted the skeleton of each proof, and I filled in most of the skeletons myself. Four of the proofs are mostly AI-written, and section 5 names them. I first tried to write each of the other proofs on my own. When I ran into problems, I consulted ChatGPT, then kept experimenting until `lake build` succeeded. For the harder proofs, I first isolated the difficult step as a black box, and ChatGPT then gave me hints on how to fill it in. ChatGPT also
 helped me interpret compiler errors, suggested alternative proof strategies when I asked, and pointed me to relevant Mathlib lemmas. When I had trouble reading the infoview, I sometimes discussed errors and their mathematical meaning with it.
  
-**Documentation.** ChatGPT helped me improve my explanatory comments, documentation, and GitHub organizatio and gave me the basic skeleton of the report according to the course project guidelines.
+**Documentation.** ChatGPT helped me improve my explanatory comments, documentation, and GitHub organization and gave me the basic skeleton of the report according to the course project guidelines.
  
 
 ## 4. Claude
@@ -57,7 +56,7 @@ not from me. I checked each one in Lean.
  
 - `NoCofinalBranch.lean`: `countable_below_of_strictly_cofinal_chain` and
   `ambient_no_cofinal_chain`.
-- `NoCofinalBranch.lean`: the private theorem `not_countable_below_omega_one`. The first version used a Mathlib lemma that does not exist and Claude rewrote the proof.
+- `NoCofinalBranch.lean`: the private theorem `not_countable_below_omega_one`. The first version used a Mathlib lemma that does not exist, and Claude rewrote the proof.
 - `SpecialTrees.lean`: `family_countable_of_coloring_and_countable_antichains`.
 
 
@@ -76,7 +75,7 @@ not from me. I checked each one in Lean.
   `family_countable_of_coloring_and_countable_antichains`, `uncountable_special_not_suslin`.
 - `FinalCriterion.lean`: `aronszajn_of_extension_invariant`.
 
-**Hints.** For the harder proofs in the lists above, I first black-boxed the difficult step, and ChatGPT then gave me hints toward filling it in.
+**Hints.** For the harder proofs in the lists above, I first black-boxed the difficult step, and ChatGPT then gave me hints on how to fill it in.
  
 Claude changed the following code that remains in the repository:
 - `NoCofinalBranch.lean`, `not_countable_below_omega_one`: Claude rewrote the proof.
@@ -92,4 +91,4 @@ The files `Checkpoint1.lean`, `Checkpoint2.lean`, `Checkpoint34.lean` and `Resea
 I used Lean's compiler and the project build (`lake build`, and the GitHub Actions run) to test all AI-assisted code. I am well aware that compilation is an important check on the formal statements and proofs, but it does not by itself show that the formalized statements express every aspect of the intended
 mathematics.
 
-This statement is meant to acknowledge the full extent of AI assistance in both the formalization and its documentation.
+This statement acknowledges the full extent of AI assistance in both the formalization and its documentation.
