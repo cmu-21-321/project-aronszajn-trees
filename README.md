@@ -1,67 +1,101 @@
-# AronszajnTrees
+# Aronszajn Trees in Lean 4
 
-A template for Lean 4 projects that depend on [Mathlib](https://github.com/leanprover-community/mathlib4).
+Final project for **21-321 Interactive Theorem Proving** (Carnegie Mellon, Fall 2026), by Arshia Dabas.
+This was an individual project.
 
-## Prerequisites
+An *Aronszajn tree* is a tree of height ω₁ with countable levels and no uncountable branch. Its
+existence shows that the tree property fails at ω₁. This project formalizes the classical
+rational-sequence construction (Jech, *Set Theory*, §9): nodes are strictly increasing,
+ordinal-indexed sequences of rationals, ordered by end-extension.
 
-Install Lean via [elan](https://github.com/leanprover/elan) (see the
-[Lean installation guide](https://lean-lang.org/install/)). The correct Lean version is
-picked up automatically from `lean-toolchain`.
+## Status
 
-## 1. Rename the project
+**What is proved.** The ambient tree of rational sequences is a tree order; no chain in it can
+reach ω₁ (so the "no uncountable branch" condition holds for every selected subfamily); the
+successor step of the construction works while keeping room below a rational bound; and a
+conditional criterion reduces the whole existence theorem to one extension property.
 
-After creating your repository from this template, rename it from `ProjectTemplate` to your
-own project name:
+**What is not proved.** The existence of an Aronszajn tree itself. The missing piece is choosing
+a prefix-closed family with countable levels at every countable ordinal, in particular at
+*limit* stages, where the extension property `HasExtensionInvariant` has to be established.
+The report explains why this step is not another successor step (a sequence such as
+0, ½, ¾, ⅞, … has room below 1 at every finite stage but not at its limit).
 
-```bash
-./customize.sh MyProject
+The project builds with no errors and contains no `sorry`.
+
+## Main results
+
+| Result | Lean name | File |
+|---|---|---|
+| Heights increase along the order; same-level nodes are incomparable | `nodeHeight_lt_of_lt`, `same_level_not_lt` | `Checkpoint1` |
+| Levels are antichains; a chain meets a level at most once | `level_isAntichain`, `chain_meets_level_at_most_once` | `Checkpoint2` |
+| A rational specialization makes every chain countable | `countable_chain_of_rational_specialization` | `Checkpoint2` |
+| Every rational node has countably many indices | `rationalNode_domain_countable` | `Checkpoint34` |
+| Two initial segments of a node are comparable | `initialSegments_comparable` | `Checkpoint34` |
+| End-extension is antisymmetric, giving a `PartialOrder` | `endExtends_antisymm` | `ConstructionOrder` |
+| Rational sequences under end-extension form a tree | `rationalNodes_form_tree` | `ConstructionOrder` |
+| An initial segment is determined by its length | `initialSegments_eq_of_length_eq` | `OrdinalHeights` |
+| **No chain is cofinal in ω₁** | `ambient_no_cofinal_chain` | `NoCofinalBranch` |
+| Every selected family has no cofinal chain | `selected_family_no_cofinal_chain` | `NoCofinalBranch` |
+| **Successor step with room below `q`** | `successor_extension_with_room` | `LevelConstruction` |
+| The extension invariant gives nonempty levels | `nonempty_levels_of_extension_invariant` | `LevelConstruction` |
+| **Conditional Aronszajn criterion** | `aronszajn_of_extension_invariant` | `FinalCriterion` |
+| Antichain colorings give countable chains | `chain_countable_of_antichain_coloring` | `SpecialTrees` |
+| An uncountable special family is not Suslin-like | `uncountable_special_not_suslin` | `SpecialTrees` |
+
+## How the files fit together
+
+```mermaid
+graph TD
+  C1[Checkpoint1: abstract tree orders] --> C2[Checkpoint2: chains, levels, antichains]
+  C1 --> C34[Checkpoint34: RationalNode, EndExtends, PrefixClosedFamily]
+  C34 --> RN[ResearchNotes: antichain colorings]
+  C34 --> CO[ConstructionOrder: PartialOrder and tree]
+  CO --> OH[OrdinalHeights]
+  CO --> LC[LevelConstruction: successor step]
+  CO --> NB[NoCofinalBranch]
+  C34 --> NB
+  RN --> ST[SpecialTrees]
+  CO --> ST
+  LC --> FC[FinalCriterion]
+  NB --> FC
 ```
 
-This updates `lakefile.toml`, `lake-manifest.json`, the Lean imports and this README's title, and
-renames `ProjectTemplate.lean` and `ProjectTemplate/` to `MyProject.lean` and `MyProject/`.
-The name must be a valid Lean module name (letters, digits and underscores, starting with a
-letter; UpperCamelCase is conventional). Commit the result, then delete `customize.sh`.
+A good reading order is `Checkpoint1`, `Checkpoint34`, `ConstructionOrder`, `NoCofinalBranch`,
+`LevelConstruction`, `FinalCriterion`. The `Checkpoint*` files are named after the course
+checkpoints in which they were written; the later files are named by topic.
 
-## 2. Get the Mathlib cache
+## Some design notes
 
-Compiling Mathlib from source takes hours, so download the prebuilt files instead:
+- **Nodes.** `RationalNode` stores an ordinal length and a strictly increasing map from
+  `{i // i < length}` to ℚ. This rules out out-of-range evaluations by construction, at the cost
+  of dependent-type bookkeeping in equality proofs (see `endExtends_eq_of_length_eq`).
+- **Order.** End-extension is installed as a `PartialOrder` instance so Mathlib's order API
+  applies directly. Well-foundedness comes from pulling back `<` on `Ordinal` along `length`.
+- **Specification vs. construction.** Predicates such as `HasExtensionInvariant` and
+  `HasCountableSelectedLevels` only *state* the properties the final family needs. They are
+  labelled as specifications in the source because defining one does not give an example.
+- **Heights.** `Checkpoint1` defines height through `WellFounded.rank`; the concrete model uses
+  ordinal length. Proving that the two agree (an order isomorphism between the predecessors of a
+  node and the ordinals below its length) is not done; `OrdinalHeights.lean` proves the first step.
+
+## Building
 
 ```bash
-lake exe cache get
-```
-
-Re-run this whenever you change the Mathlib version (or if your editor starts rebuilding
-Mathlib files).
-
-## 3. Build and work on the project
-
-```bash
+lake exe cache get   # download the prebuilt Mathlib
 lake build
 ```
 
-- Put your Lean files under `MyProject/` and import each one from `MyProject.lean`, so that
-  `lake build` (and CI) checks them.
-- Open the repository folder (not a single file) in VS Code with the Lean 4 extension.
+Lean and Mathlib are pinned to `v4.36.0-rc1` (`lean-toolchain`, `lakefile.toml`). The build
+prints style-linter warnings (file headers, `module`); they are harmless. Continuous
+integration runs `lake build` on every push (`.github/workflows/lean_action_ci.yml`).
 
-## Updating Mathlib
+## Other deliverables
 
-Change the `rev` under `[[require]]` in `lakefile.toml` to the new Mathlib tag, and set
-`lean-toolchain` to match. Then run:
+- Written report: [`report/`](report/) (LaTeX source and PDF)
+- [`COLLABORATION.md`](COLLABORATION.md)
+- [`AI_USE.md`](AI_USE.md)
 
-```bash
-lake update mathlib
-lake exe cache get
-lake build
-```
+## Reference
 
-Alternatively, run the **Update Dependencies** workflow from the GitHub *Actions* tab: it
-opens a pull request if the update builds, or an issue if it doesn't. (Uncomment the
-`schedule` block in `.github/workflows/update.yml` to run it automatically.)
-
-## GitHub setup
-
-- **CI**: every push and pull request is built by `.github/workflows/lean_action_ci.yml`.
-- To let the update workflow open pull requests, go to **Settings → Actions → General** and
-  tick **Allow GitHub Actions to create and approve pull requests**.
-- To publish docs to GitHub Pages, set **Settings → Pages → Source** to "GitHub Actions" and
-  uncomment the `docgen-action` line in `lean_action_ci.yml`.
+T. Jech, *Set Theory: The Third Millennium Edition, Revised and Expanded*, Springer, 2003.
