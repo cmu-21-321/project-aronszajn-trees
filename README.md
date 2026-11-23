@@ -97,6 +97,7 @@ integration runs `lake build` on every push (`.github/workflows/lean_action_ci.y
 - [`COLLABORATION.md`](COLLABORATION.md)
 - [`AI.md`](AI.md)
 
-## Reference
+## Main reference
 
 T. Jech, *Set Theory: The Third Millennium Edition, Revised and Expanded*, Springer, 2003.
+All other references appear in the written report. 
