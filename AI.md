@@ -59,6 +59,8 @@ not from me. I checked each one in Lean.
   `ambient_no_cofinal_chain`.
 - `NoCofinalBranch.lean`: the private theorem `not_countable_below_omega_one`. The first version used a Mathlib lemma that does not exist and Claude rewrote the proof.
 - `SpecialTrees.lean`: `family_countable_of_coloring_and_countable_antichains`.
+
+
 **Proof skeletons.** ChatGPT drafted a proof skeleton for every theorem below, and I filled in the skeletons, apart from the four above. I list them all because I think that skeletons that remain in the repository count as AI-generated code.
  
 - `OrdinalHeights.lean`: `endExtends_eq_restrict`, `initialSegments_eq_of_length_eq`,
