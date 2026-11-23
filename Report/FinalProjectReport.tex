@@ -1,0 +1,212 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=0.85in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{xcolor,hyperref,enumitem,listings}
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black,citecolor=blue!45!black}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4.5pt}
+\setlist[itemize]{topsep=2pt,itemsep=2pt}
+\setlist[enumerate]{topsep=2pt,itemsep=2pt}
+\newtheorem{proposition}{Proposition}
+\newtheorem{observation}{Observation}
+\newcommand{\wone}{\omega_1}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\lstset{literate={ℚ}{{$\mathbb{Q}$}}1 {→}{{$\to$}}1 {₂}{{$_2$}}1,basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,breaklines=true,frame=single,framerule=0.25pt,rulecolor=\color{black!25},backgroundcolor=\color{black!2},aboveskip=5pt,belowskip=4pt}
+\title{\vspace{-1.4em}\textbf{Aronszajn Trees in Lean 4}\\[2pt]\large Tree Orders, Rational Sequences, and the Countable-Level Obstruction}
+\author{Arshia Dabas \\ 
+\emph{21-321 Interactive Theorem Proving}\\Carnegie Mellon University}
+\date{Fall 2026}
+\begin{document}
+\maketitle\vspace{-1.6em}
+
+\begin{abstract}\noindent
+An Aronszajn tree has height $\wone$, countable levels, and no uncountable branch, and its existence shows that the tree property fails at $\wone$. In this project I tried to formalize that existence theorem in Lean 4, using strictly increasing rational-valued sequences of ordinal length, ordered by end-extension. I did not get all the way there. What I did formalize is an abstract tree-order API, the partial order on rational sequences, a proof that no chain in that order can run cofinally through $\wone$, the successor step of the construction, and a conditional criterion that says exactly what is left to prove. The missing piece is choosing a coherent prefix-closed family with countable levels at every countable ordinal, especially at limit stages. Along the way the project highlighted three things to me: how dependent subtype indices affect proofs, how much work Mathlib's order API does if you let it, and how over-bundling definitions makes a development harder to use.
+\end{abstract}
+
+\section{Motivation and the mathematical target}
+K\"onig's infinity lemma says that a finitely branching infinite tree has an infinite branch. At uncountable heights the analogous statement can fail even when every level is small, and that is what this project is about. The \emph{tree property} at a regular cardinal $\kappa$ says that every tree of height $\kappa$ with levels of size less than $\kappa$ has a cofinal branch. An Aronszajn tree is a counterexample at $\kappa=\wone$: it has height $\wone$ and countable levels, but no branch of length $\wone$.
+
+Here ``tree'' is order-theoretic. A partial order $(T,\leq_T)$ is a tree if for every $t\in T$ the strict predecessor set
+\[
+T_{<t}=\{s\in T:s<_Tt\}
+\]
+is well-ordered by the inherited relation. Its order type is the \emph{height} $\operatorname{ht}_T(t)$ of $t$, and the $\alpha$-th level is $T_\alpha=\{t:\operatorname{ht}_T(t)=\alpha\}$. So the full existence problem is to find a single order $T$ such that
+\begin{equation}\label{eq:target}
+\operatorname{ht}(T)=\wone,\qquad
+\forall\alpha<\wone\ (|T_\alpha|\leq\aleph_0),\qquad
+\text{no cofinal branch in }T.
+\end{equation}
+I originally set out to formalize this existence theorem, following the classical constructions in Jech \cite{jech}. What I actually have develops most of the rational-sequence approach but does not complete \eqref{eq:target}. The thing I kept having to remind myself is that stating the three conditions is not the same as constructing something that satisfies them. Hrbacek and Jech \cite[Ch.~12, Thm.~3.5]{hj} give a different proof of existence, which builds the tree from injections $\alpha\to\omega$ instead of increasing rational sequences; this project follows the rational-sequence construction \cite[Theorem 9.16]{jech}.
+
+
+\section{A rational-sequence model and its mathematics}
+\subsection{Nodes and end-extension}
+Firstly, let's fix the objects. For an ordinal $\alpha$, consider a strictly increasing map $x:\alpha\to\Q$. The node $x$ records its domain length $\ell(x)=\alpha$. Define $x\preceq y$ when $\ell(x)\leq\ell(y)$ and the values of $x$ agree with those of $y$ on every index below $\ell(x)$. Thus $x$ is an initial segment of $y$; the strict relation $x\prec y$ means proper end-extension.
+
+\begin{proposition}\label{prop:tree}
+The collection of ordinal-indexed strictly increasing rational sequences, ordered by end-extension, is a tree order.
+\end{proposition}
+\begin{proof}
+Reflexivity and transitivity follow from agreement on initial domains. If $x\preceq y$ and $y\preceq x$, then their lengths agree and their values agree everywhere; hence $x=y$. Moreover,
+\[
+x\prec y \quad\Longrightarrow\quad \ell(x)<\ell(y).
+\]
+Otherwise equality of lengths would imply equality of nodes. A strictly descending chain of nodes would therefore give a strictly descending chain of ordinals, impossible by well-foundedness of $<$ on ordinals. Finally, if $x$ and $y$ both precede $z$, their domains are initial segments of the same ordinal $\ell(z)$; whichever domain is shorter determines an initial segment of the other. Hence $x\preceq y$ or $y\preceq x$.
+\end{proof}
+
+\paragraph{A useful formal test of the order.}
+Once I had a \code{PartialOrder RationalNode} instance, I could state the tree property without carrying my own comparison relation through every theorem. Proving \code{rationalNodes_form_tree} then came down to two fields. Well-foundedness comes from the ordinal length map, and I had already proved predecessor comparability for two initial segments of a common sequence. So this one was short thanks to Mathlib's order API.
+
+
+Proposition~\ref{prop:tree} only gives an ambient tree, not an Aronszajn tree, because nothing forces the levels to be countable. Fix length $\omega$, and for each subset $A\subseteq\N$ define
+\[
+f_A(n)=1-2^{-n}+\mathbf{1}_{A}(n)\,2^{-(n+2)}.
+\]
+Every $f_A$ is strictly increasing and bounded above by $1$, and distinct subsets yield distinct sequences. So even the bounded increasing sequences of length $\omega$ form an uncountable family. A construction therefore has to \emph{select} countably many nodes at each level; it isn't enough to know that each node has countable length.
+
+\subsection{Why there can be no cofinal chain}
+The rational codomain gives you one of the three desired conditions for free, in the following sense.
+\begin{proposition}\label{prop:branch}
+No chain of end-extensions contains nodes of unbounded length below $\wone$.
+\end{proposition}
+\begin{proof}
+Suppose $B$ is such a chain. For each $\alpha<\wone$, choose $x_\alpha\in B$ with $\alpha<\ell(x_\alpha)$ and define $g(\alpha)=x_\alpha(\alpha)\in\Q$. If $\alpha<\beta$, comparability gives either $x_\alpha\preceq x_\beta$ or $x_\beta\preceq x_\alpha$. In the first case,
+\[
+g(\alpha)=x_\beta(\alpha)<x_\beta(\beta)=g(\beta).
+\]
+In the second case, the same inequality is obtained in $x_\alpha$, which agrees with $x_\beta$ at $\beta$. Hence $g:\wone\to\Q$ is strictly increasing, in particular injective. This contradicts uncountability of $\wone$ and countability of $\Q$.
+\end{proof}
+
+\paragraph{Why choosing a node does not make $g$ ambiguous.} Does $g(\alpha)=x_\alpha(\alpha)$ depend on which witness $x_\alpha$ we
+picked? It does not, because every chosen node belongs to the same
+chain, so any two agree on the overlap of their domains. Making this
+precise in Lean requires a case split: comparability gives
+$x_\alpha \preceq x_\beta$ or the reverse, and the two branches need
+separate arguments.
+
+This argument is useful because it applies to the entire ambient tree. Any selected subtree inherits the absence of a cofinal end-extension chain, so we never have to redo the contradiction for each choice of levels. The Lean file \code{NoCofinalBranch.lean} proves this through a general lemma about strictly cofinal chains and then specializes it to \code{Ordinal.omega 1}.
+
+\section{Representation and Mathlib design}
+\subsection{An abstract tree-order property}
+The first module, \code{Checkpoint1.lean}, defines \code{IsTreeOrder} using Mathlib's \code{PartialOrder}, a well-founded strict relation, and comparability of predecessors. Node height is defined with \code{WellFounded.rank}. Two of the resulting structural facts are that heights increase on proper extensions and that each level is an antichain. This was useful for experimenting with the abstract order theory independently of any particular construction.
+
+The model uses a structure with a dependent domain:
+\begin{lstlisting}
+structure RationalNode where
+  length : Ordinal
+  values : {i : Ordinal // i < length} → ℚ
+  increasing : StrictMono values
+\end{lstlisting}
+The subtype index carries a proof that every evaluation is in range, so ill-formed evaluations are impossible by construction. The price is that comparing two nodes of different lengths means transporting the same underlying ordinal index through different subtype proofs, and function extensionality and proof irrelevance show up even in elementary proofs like antisymmetry.
+
+For example, the proof of \code{endExtends_eq_of_length_eq} first destructures both nodes and substitutes the equality of their lengths. Only then do the two value functions have the same domain type, so \code{funext} can prove they're equal pointwise, and the last step is structure equality. On paper you'd just say ``same length and same values, hence same node'' but Lean makes you justify why the two \emph{dependent function types} can be compared at all. This was one place where the representation choice added proof cost.
+
+The order relation itself is explicit: \code{EndExtends x y} packages a length inequality and agreement on the common domain. \code{ConstructionOrder.lean} supplies the missing antisymmetry argument, installs the \code{PartialOrder RationalNode} instance, and proves \code{rationalNodes_form_tree}. For well-foundedness I take the inverse image of ordinal $<$ along \code{RationalNode.length}, which avoids a bespoke transfinite recursion. The proof is short once the right API lemma has been found:
+\begin{lstlisting}
+theorem rationalNodes_form_tree : IsTreeOrder RationalNode where
+  wellFounded := by
+    apply Subrelation.wf
+      (h₂ := InvImage.wf RationalNode.length Ordinal.lt_wf)
+    intro x y hxy
+    exact length_lt_of_lt hxy
+  predecessorsComparable := by
+    intro t s u hs hu
+    exact initialSegments_comparable (le_of_lt hs)
+      (le_of_lt hu)
+\end{lstlisting}
+The whole well-foundedness argument rests on the mathematical content of \code{length_lt_of_lt}, so later theorems never need to unpack the structure.
+
+\subsection{Countability in Mathlib}
+There's a small but important scope distinction here. \code{Countable {i // i < x.length}} is a statement about the subtype of indices of one node, while \code{Set.Countable (familyLevel F beta)} is about a set of distinct structures. Proving the first takes a single injection into $\Q$. Proving the second requires controlling \emph{how many separate functions} are selected for the same domain, and there is no implication between the two without more information about the selection process. So \code{rationalNode_domain_countable} doesn't prove the second Aronszajn condition.
+
+That theorem uses the reusable interface of strict monotonicity:
+\[
+\operatorname{StrictMono}(x)\Rightarrow \operatorname{Injective}(x)
+\Rightarrow |\operatorname{dom}(x)|\leq |\Q|=\aleph_0.
+\]
+In Lean, \code{StrictMono.injective} gives the injection, and a countability theorem for injective images brings countability back to the domain. This shows that a rational node can't have uncountable ordinal length. It does \emph{not} show that the collection of all nodes at one countable length is countable, as the example in Section~2 shows.
+
+\subsection{On bespoke definitions and theorem hypotheses}
+One important design lesson came from course-staff feedback: giving a name to an existing Mathlib expression can introduce unnecessary unfolding, and bundling several independent assumptions together can hide which ones a theorem really needs. Some of my exploratory predicates, for example \code{IsEndExtensionChain} and \code{HasHeightOmegaOneByLength}, are convenient to read but are mostly wrappers around existing comparisons or conjunctions. In a more polished API, the auxiliary theorems should take the underlying \code{IsChain} relation, or separate height and nonemptiness assumptions, directly. By contrast, \code{RationalNode}, its restriction operation, and end-extension express new mathematical data, so those definitions stay. I haven't eliminated all the exploratory wrappers in the current sources, so this is a refactor I would do next.
+
+\paragraph{Automation.}
+I kept automation light and I didn't write any metaprogramming. I mostly used \code{simp} and \code{simpa}, to finish goals about subtype values and appended nodes (for example in \code{LevelConstruction.lean}), and \code{simpa only} with an explicit lemma list for the cardinal arithmetic showing that the ordinals below $\wone$ aren't countable, so that the Mathlib lemmas doing the work are visible in the source.
+
+\section{Extension lemmas and the unresolved limit stage}
+The tree-order and branch results are not enough to construct an Aronszajn tree. The main missing ingredient is a \emph{coherent countable selection} of nodes through all $\alpha<\wone$.
+
+The file \code{Checkpoint34.lean} introduces \code{PrefixClosedFamily}, which requires that if a node is selected, then all of its initial segments are selected. It also states the intended height and countability conditions as predicates. The extra condition \code{HasRoomBelow} is used in \code{LevelConstruction.lean}: given a rational upper bound $q$, a node $x$ has room below $q$ if some $p<q$ lies strictly above all entries of $x$.
+
+\begin{proposition}\label{prop:successor}
+If $x$ has room below $q$, it admits an end-extension $y$ of successor length $\ell(x)+1$ that still has room below $q$.
+\end{proposition}
+\begin{proof}
+Choose $p<q$ with $x(i)<p$ for every $i<\ell(x)$. Append the value $p$ at the new final index. By density of $\Q$, there exists $r$ with $p<r<q$. All old values and the new entry $p$ are strictly below $r$, so the extended sequence retains the required room below $q$.
+\end{proof}
+
+This is the core of \code{successor_extension_with_room}. Note that a family made of every initial segment of one bounded node has at most one member per level, so its levels are countable, but its height is bounded by that node, so it can't witness \eqref{eq:target} on its own.
+
+\paragraph{Why the limit stage is not another successor step.}
+For a countable limit ordinal $\gamma$, we can choose a cofinal sequence $\gamma_0<\gamma_1<\cdots$ and compatible nodes $x_n$ of those lengths. Their union defines a candidate function on $\gamma$: at index $\alpha<\gamma$, use the value from any $x_n$ whose domain contains $\alpha$. Compatibility makes this independent of $n$, and strict increase follows by choosing a common sufficiently long node for any pair of indices. So the union is well-defined. But that is all we get for free: it does not ensure that the union stays below a useful rational cap, and it does not ensure that selecting all the unions we need leaves only countably many nodes on level $\gamma$.
+
+This is where the stronger upper-bound invariant stops being enough on its own. For example, every finite prefix of
+\[
+0,\quad \tfrac12,\quad\tfrac34,\quad\tfrac78,\quad\ldots
+\]
+has room below $q=1$, but the union at length $\omega$ has supremum $1$ and has \emph{no} rational $p<1$ above every term. So a successful transfinite recursion needs more than successor extensions: it needs coordinated choices that keep a uniform margin at countable limit stages, it has to pick only countably many unions at each new level, and it still has to leave enough extensions for every earlier chosen node.
+
+There is a second open interface, about heights. The mathematical height of a node in the end-extension order should equal its ordinal length, since its predecessors are exactly its proper restrictions. \code{OrdinalHeights.lean} proves that the initial segment at each length is unique, but the order isomorphism with the ordinal predecessor interval, and the resulting rank equality, are not formalized yet. Until they are, the length-based specification shouldn't be silently identified with the earlier \code{WellFounded.rank}-based one.
+
+\section{Special trees and the conditional criterion}
+I am deeply interested in how the Aronszajn condition relates to the stronger Suslin condition, so, as a secondary investigation, \code{ResearchNotes.lean} defines an antichain coloring: comparable distinct nodes must receive distinct natural-number colors. The fibers are antichains, and the coloring is injective on any chain, so every chain is countable. The next file, \code{SpecialTrees.lean}, builds on this: if an uncountable selected family has such a coloring, then it can't also have only countable antichains, because countably many countable color classes would make the whole family countable. These are conditional statements, not a construction of a special Aronszajn or Suslin tree, but they help separate the ordinary Aronszajn requirement (no uncountable chain) from the stronger Suslin antichain condition.
+
+The original goal was to prove existence. What the formalization actually establishes is more-so reusable machinery for the ambient rational-sequence tree, the no-cofinal-chain obstruction, and the successor-stage extension lemma. \code{NoCofinalBranch.lean} also proves a conditional criterion: a prefix-closed selected family with height $\wone$ and countable selected levels satisfies the length-based Aronszajn conditions. The missing central step is showing that such a family exists.
+
+\paragraph{Packaging the conditional criterion.}
+\code{FinalCriterion.lean} pulls the earlier pieces together into  \\ \code{aronszajn_of_extension_invariant}. For a prefix-closed family \code{F}, suppose every selected node has length below $\wone$, every selected level is countable, level $0$ contains a node with room below some rational, and \code{HasExtensionInvariant F} holds. Then all three Aronszajn conditions follow: nonempty levels at every countable ordinal come from the extension invariant (\code{nonempty_levels_of_extension_invariant}), and the absence of a cofinal chain comes from the ambient argument. For a node $x$, \code{HasRoomBelow x q} says exactly that $\sup x<q$, so the extension invariant is a formalized form of the extension property used in classical constructions \cite{jech}: every selected node with supremum below $q$ extends to every later countable level with supremum still below $q$. What remains is to construct \code{F} by recursion on $\wone$ so that the invariant and countable levels hold simultaneously, and the limit step is the open part, as discussed above.
+
+\paragraph{The conditional theorem versus existence.}
+The theorem \code{aronszajn_of_height_}\allowbreak\code{and_countable_levels} is logically just conjunction introduction: given \code{F} and hypotheses asserting height and countable selected levels, its proof invokes the no-cofinal-chain result and combines the three conclusions. That makes it a useful interface specification, but its proof is not evidence that the assumptions can be realized at the same time. An existence proof would need to \emph{construct} \code{F}, prove closure under restrictions, establish nonempty levels at every countable ordinal, and show that each chosen level is countable. The mathematical hard part comes before the call to this theorem.
+
+\paragraph{A secondary comparison: special versus Suslin.}
+The argument in \code{SpecialTrees.lean} is a different kind of result, and it's already reusable even without a constructed Aronszajn tree. If a countable coloring separates comparable nodes, its fibers are antichains. If every antichain in a family is countable, then every fiber is countable, and the node set is a countable union of countable sets, hence countable. So an \emph{uncountable} family with such a coloring can't satisfy the Suslin-like antichain condition, and the uncountability hypothesis is essential, so it's stated explicitly. This also shows the value of separating assumptions: the coloring and the antichain condition are logically independent inputs, not facts that should be bundled into every tree theorem.
+
+\section{Reflection}
+
+\paragraph{How the project developed.}
+I started with the abstract definition, because I wanted to see how much of an Aronszajn tree I could state before committing to any construction. In the first checkpoint, a tree was just a partial order with a well-founded strict relation and comparable predecessors, with height defined by \code{WellFounded.rank}. In the second, I tested those definitions on the natural numbers, a tree of height $\omega$, to check that levels, chains, and antichains behaved the way they do in set theory. That's where I found that a chain meets a level in at most one node (Mathlib already has the chain/antichain fact, so I only had to prove that levels are antichains), and where I proved that a function into $\Q$ that increases along the order makes every chain countable. Only after that did I commit to the model: ordinal-indexed rational sequences under end-extension, following the construction in Jech \cite{jech}.
+
+\paragraph{The set theory was most of the work.}
+A lot of the effort was not Lean at all! Before each file I had to work out the mathematics on paper: why no strictly increasing $\wone$-sequence of rationals exists, why ``bounded above'' isn't a strong enough invariant (the values $1-\tfrac1{n+1}$ are all below $1$, but nothing can be appended below $1$), what \code{HasRoomBelow} should say instead, and what the extension property in the classical construction is really asking for. The point I kept coming back to in my notes is that the real obstruction is \emph{not} the countability of a single sequence's domain; it's selecting a countable collection of nodes at each level so that the choices are compatible. I also didn't want to hide the transfinite step behind a phrase like ``select a countable family'', so every predicate I wrote as a specification is labelled as one in the source: naming a property \code{Is...} doesn't give an example that satisfies it.
+
+\paragraph{Lean and Mathlib lessons.}
+The biggest proof cost came from the representation. Antisymmetry of end-extension is trivial on paper and was really awkward in Lean, because the two value functions live on dependent subtypes of possibly different ordinal lengths. I also had to decide whether to install a global \code{PartialOrder} instance or keep end-extension as an explicit relation while proving its properties. For me, installing the instance paid off: the tree property for \code{RationalNode} then needed only two short proofs, using an inverse image of ordinal $<$ along \code{RationalNode.length} instead of a transfinite recursion. Staff feedback also taught me another design lesson: a named wrapper around an existing Mathlib expression (like my \code{IsEndExtensionChain}) adds unfolding without adding mathematics, and bundling independent assumptions hides which ones a theorem uses. I started with \code{WellFounded.rank} for heights, later switched to ordinal lengths for the concrete model, and haven't yet proved they agree. I'd now consider defining height through the order type of the predecessors from the start.
+
+\paragraph{Side investigations.}
+As mentioned, I also looked at special trees and the Suslin condition. I wanted to see exactly what the Aronszajn requirements don't include: the existence of an Aronszajn tree is provable in ZFC, while the existence of a Suslin tree is independent of it. The small conditional results in \code{ResearchNotes.lean} and \code{SpecialTrees.lean} came out of that.
+
+\paragraph{Scope and what's left.}
+This was an individual project, and I knew from the start that the scope was very ambitious for one person. Regardless, the repository has about 1{,}600 lines of Lean, developed through the course's weekly checkpoints and time outside of class, with no \code{sorry}. Working individually meant the reading, the mathematics, and the design decisions all had to come from me, and I used AI to formalize parts of the Lean proofs, as described in the repository's \code{AI.md}. The Lean files are only the visible part of that work! I also want to acknowledge that, yes, not completing the existence proof is a real shortfall! But I created a plan for finishing, which is already written out in \code{LevelConstruction.lean}: choose a cofinal sequence at a countable limit, build compatible extensions along it, take the union as a \code{RationalNode}, show that strict monotonicity and \code{HasRoomBelow} survive, and then show that only countably many such unions are selected per level. As I understand the classical argument, the key is to aim the extensions at some rational $q'<q$ rather than at $q$ itself, which is what the sequence $0,\tfrac12,\tfrac34,\ldots$ above gets wrong. \\
+
+A question I wrote in my own notes was ``what is the strongest proved conditional result I can state?'', and \code{aronszajn_of_extension_invariant} is my answer. I think I would rather hand in a smaller result I understand and can explain than a larger one I can't. And, to be brief and frank, the three things I'll remember are that equality of dependent types is annoying, that Mathlib's order API does a lot if you let it, and that bundling hypotheses hurts later. Those are substantial lessons even though the original existence goal remains unfinished. Nevertheless, I learned a lot.\\
+
+\textbf{Verification note.} The repository sources contain no \code{sorry}, and all files build with \code{lake build} against Mathlib v4.36.0-rc1.
+\section*{Acknowledgments}
+I want to thank Sidharth Hariharan, our TA for 21-321, and the rest of the course staff for guidance and feedback during the project, including the API-design feedback discussed in Section~3.3. In particular, I am grateful to Sid for encouraging me to pursue an ambitious project and for giving me a good foundation. I also thank Prof.\ Sumun Iyer, whose Spring 2026 Set Theory course gave me the background on trees, ordinals, and $\wone$ that this project builds on. I am also grateful to her for meeting with me to discuss the project's scope, possible approaches, and extensions toward Suslin trees.
+
+My development depends on the following parts of Mathlib \cite{mathlib}, whose file headers credit the authors named here (many others have contributed to these files since): the ordinal basics, including \code{Ordinal.lt_wf} (Mario Carneiro, Floris van Doorn); \code{Ordinal.omega}, \code{Cardinal.isSuccLimit_omega}, and \code{Cardinal.aleph0_lt_aleph_one} in the aleph file (Johannes H\"olzl, Mario Carneiro, Floris van Doorn, Violeta Hern\'andez Palacios); \code{WellFounded.rank} (Ya\"el Dillies); \code{Set.Countable} and its lemmas (Johannes H\"olzl); \code{StrictMono.injective} (Jeremy Avigad, Mario Carneiro, Ya\"el Dillies); and \code{Order.succ} (Ya\"el Dillies). The well-foundedness tools \code{InvImage.wf} and \code{Subrelation.wf} come from Lean's core library \cite{lean}. \\
+
+\emph{Finally, I want to emphasize that I have put a great deal of time into this project, and that it is a personal interest of mine, so I plan to keep working on it and to try to finish the remaining limit-stage construction over winter break. I am very grateful to this class for letting me explore formalization in a way that gave me feedback along the way while still leaving room to follow my own questions.}
+
+\begin{thebibliography}{9}\setlength{\itemsep}{2pt}
+\bibitem{jech} T. Jech, \emph{Set Theory: The Third Millennium Edition, Revised and Expanded}, Springer, 2003. (Classical constructions and the tree property.)
+\bibitem{hj} K. Hrbacek and T. Jech, \emph{Introduction to Set Theory}, 3rd ed., revised and expanded, Marcel Dekker, 1999. (Chapter 12: Definition 3.4 of an Aronszajn tree and Theorem 3.5, that Aronszajn trees of height $\omega_1$ exist.)
+\bibitem{mathlib} The Mathlib Community, \emph{Mathlib4: The Lean Mathematical Library}, \url{https://github.com/leanprover-community/mathlib4}.
+\bibitem{lean} L. de Moura and S. Ullrich, ``The Lean 4 Theorem Prover and Programming Language,'' 2021.
+\bibitem{repo} \emph{Aronszajn Trees Lean Project}, course repository, \url{https://github.com/cmu-21-321/project-aronszajn-trees}.
+\end{thebibliography}
+\end{document}
