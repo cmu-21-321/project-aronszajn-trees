@@ -62,7 +62,7 @@ graph TD
 ```
 
 A good reading order is `Checkpoint1`, `Checkpoint34`, `ConstructionOrder`, `NoCofinalBranch`,
-`LevelConstruction`, `FinalCriterion`. The `Checkpoint*` files are named after the course
+`LevelConstruction`, `FinalCriterion`. The `Checkpoint` files are named after the course
 checkpoints in which they were written (`Checkpoint34` combines checkpoints 3 and 4); the
 later files are named by topic.
 
