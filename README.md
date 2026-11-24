@@ -93,11 +93,14 @@ integration runs `lake build` on every push (`.github/workflows/lean_action_ci.y
 
 ## Other deliverables
 
+
 - Written report: [`Report/`](Report/) (LaTeX source and PDF)
+- Project showcase video: [YouTube](https://youtu.be/2gkAvOql9bc)
 - [`COLLABORATION.md`](COLLABORATION.md)
 - [`AI.md`](AI.md)
 
 ## Main reference
 
 T. Jech, *Set Theory: The Third Millennium Edition, Revised and Expanded*, Springer, 2003.
+
 All other references appear in the written report. 
